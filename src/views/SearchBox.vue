@@ -1,7 +1,7 @@
 <template>
   <div class="page" id="search">
     <header class="bar bar-nav">
-      <h1 class='title'>选择日期</h1>
+      <h1 class='title' onclick="goBack()">选择日期</h1>
     </header>
     <div class="content">
       <div class="default-panel">
@@ -34,6 +34,18 @@
   var utils = require('../utils');
   var _sc,_ec;
   module.exports =  {
+    route:{
+      data:function(transition){
+        transition.next({
+          search:Constant.search
+        });
+      },
+      deactivate:function(transition){
+        if(_sc) _sc.close();
+        if(_ec) _ec.close();
+        transition.next();
+      }
+    },
     props:{
       search:{
         type:Object,
@@ -52,54 +64,52 @@
     },
     methods:{
       init:function(){
-        var _this = this;
-        $(document).on("beforePageSwitch",function(){
-          if(_sc) _sc.close();
-          if(_ec) _ec.close();
-        });
+
       },
       initUI:function(){
         var _this = this;
         $('#box-starttime').calendar({
-          maxDate:this.search.endTime,
+          maxDate:this.search.endTime.replace(/-/g,'/'),
           ready:function(p){
             _sc = p;
           },
           onClose:function(p,values,displayValues){
-            _ec.params.minDate = _this.search.startTime;//控制开始时间结束世界的min maxDate
+            _ec.params.minDate = _this.search.startTime.replace(/-/g,'/')+" 00:00:00";//控制开始时间结束世界的min maxDate
           }
         });
         $('#box-endtime').calendar({
-          minDate:this.search.startTime,
-          maxDate:utils.formatDateTime(new Date(),1),
+          minDate:this.search.startTime.replace(/-/g,'/')+" 00:00:00",
+          maxDate:utils.formatDateTime(new Date(),1).replace(/-/g,'/'),
           ready:function(p){
             _ec = p;
           },
           onClose:function(p,values,displayValues){
-            _sc.params.maxDate = _this.search.endTime;//控制开始时间结束世界的min maxDate
+            _sc.params.maxDate = _this.search.endTime.replace(/-/g,'/');//控制开始时间结束世界的min maxDate
           }
         });
       },
       //本周
       thisweek:function(){
         var time = utils.getThisWeekTime();
-        this.search.startTime = time.startTime;
-        this.search.endTime = time.endTime;
+        this.setTime(time);
         this.toIndex();
       },
       //本月
       thismonth:function(){
         var time = utils.getThisMonthTime();
-        this.search.startTime = time.startTime;
-        this.search.endTime = time.endTime;
+        this.setTime(time);
         this.toIndex();
       },
       othertime:function(){
+        this.setTime(this.search);
         this.toIndex();
+      },
+      setTime:function(time){
+        Constant.search = time;
       },
       toIndex:function(){
         this.$dispatch('search-data');
-        $.router.load('#index');
+        router.go({name:'default'});
       }
     }
   };

@@ -1,31 +1,34 @@
 <template>
-  <div class="page-group">
+  <div class="page-group item-page3">
     <div class="page page-current" id="index">
       <header class="bar bar-nav">
-        <h1 class='title' v-show="key.indexOf(',')==-1">合格率<span v-bind:class="'state-'+key">{{title}}</span>的点检项列表</h1>
-        <h1 class='title' v-bind:class="'state-'+key" v-show="key.indexOf(',')>-1">{{title}}</h1>
+        <h1 class='title'>{{title}}</h1>
       </header>
-      <div class="content pull-to-refresh-content infinite-scroll"  data-ptr-distance="55" data-distance="240">
+      <div class="nav-content">
+        <!--<div class="top-panel">
+          <label class="date-time">{{search.startTime}}</label>
+          ～
+          <label class="date-time">{{search.endTime}}</label>
+        </div>-->
+        <div class="tab-panel bar bar-nav">
+          <div class="buttons-tab head-tab">
+            <a v-on:click="showAll(1)" class="tab-link  button" v-bind:class="display.showall?'active':''">所有检查门店</a>
+            <a v-on:click="showAll(0)" class="tab-link button" v-bind:class="!display.showall?'active':''">不合格门店</a>
+          </div>
+        </div>
+      </div>
+      <div id="itemPage3Content" class="content content-is pull-to-refresh-content infinite-scroll"  data-ptr-distance="55" data-distance="100">
         <div class="pull-to-refresh-layer">
             <div class="preloader"></div>
             <div class="pull-to-refresh-arrow"></div>
         </div>
-        <div class="top-panel">
-          <label class="date-time">{{search.startTime}}</label>
-          ～
-          <label class="date-time">{{search.endTime}}</label>
-        </div>
         <div class="items-list">
           <ul>
-            <li v-for="item in items">
-              <div class="item-left">
-                <div class="item-name">{{item.itemName}}</div>
-                <div class="item-des">
-                  <label class="item-label">检查店总数</label><span class="item-num">{{item.checkDeptNum}}</span><span class="item-splitor"></span>
-                  <label class="item-label">不合格店数</label><span class="item-num">{{item.unqualifiedDeptNum}}</span>
-                </div>
+            <li v-for="item in items" v-on:click="detail(item.deptId,item.deptName)">
+              <div class="item-list">
+                <span class="item-name">{{item.deptName}}</span>
+                <span class="item-state" v-bind:class="item.state==0?'state-best':'state-bad'">{{item.state==0?'合格':'不合格'}}</span>
               </div>
-              <div class="item-rate" v-bind:class="{'state-best':item.qualifiedRate==1,'state-good':item.qualifiedRate<1&&item.qualifiedRate>=0.8,'state-bad':item.qualifiedRate<0.8}">{{item.qualifiedRate|percent}}</div>
             </li>
           </ul>
         </div>
@@ -33,6 +36,7 @@
           <div class="preloader"></div>
         </div>
       </div>
+    </div>
     </div>
 </template>
 
@@ -46,13 +50,13 @@
         if(this.refreshInit){
           this.getData(function(){
             if(_this.page.total <= _this.items.length){
-              _this.scrollInit = false;
-              $.detachInfiniteScroll($('.infinite-scroll'));
-              $('.infinite-scroll-preloader').hide();
+              _this.unbindInfinite();
             }
             $.refreshScroller();
           },{
-            key:Constant.itemParam.itemsPage.key,
+            display:{
+              showall:true
+            },
             page:{
               index:0,
               num:num
@@ -61,10 +65,11 @@
           });
         }
         transition.next({
-          title:Constant.itemParam.itemsPage.title,
-          state:Constant.itemParam.itemsPage.state,
-          key:Constant.itemParam.itemsPage.key,
+          title:Constant.itemParam.itemshopsPage.title,
           search:Constant.search,
+          display:{
+            showall:true
+          },
           page:{
             index:0,
             num:num
@@ -81,12 +86,13 @@
       return {
         search:'',
         title:'',
-        state:'',
-        key:'',
         page:{
           index:0,
           num:num,
           total:0
+        },
+        display:{
+          showall:true
         },
         loading:false,
         items:[],
@@ -97,74 +103,81 @@
     ready:function(){
       this.init();
     },
-    filters:{
-      whichraterange:function(rate){
-        if(rate == 1){
-          return "best";
-        }else if(rate < 0.8){
-          return "bad";
-        }else{
-          return 'good';
-        }
-      }
-    },
     methods:{
       init:function(opt){
         var _this = this;
+        this.display = {
+          showall:true
+        };
         if(!this.refreshInit){
-          $('.content').scroller({
+          $('#itemPage3Content').scroller({
             type:'auto'
           });
-          $.initPullToRefresh('.pull-to-refresh-content');
-          $(document).on('refresh','.pull-to-refresh-content',function(e){
+          $.initPullToRefresh('#itemPage3Content');
+          $(document).on('refresh','#itemPage3Content',function(e){
             _this.refresh();
           });
           this.refreshInit = true;
         }
-        if(!this.scrollInit){
-          $.attachInfiniteScroll($('.infinite-scroll'));
-          $('.infinite-scroll-preloader').show();
-          this.scrollInit = true;
-          this.bindInfiniteEvent();
-        }
+        this.bindInfiniteEvent();
         var _this = this;
         this.getData(function(total){
           if(_this.page.total <= _this.items.length){
-            _this.scrollInit = false;
-            $.detachInfiniteScroll($('.infinite-scroll'));
-            $('.infinite-scroll-preloader').hide();
+            _this.unbindInfinite();
           }
           $.refreshScroller();
         },opt);
       },
-      reInitScroll:function(){
-        if(!this.scrollInit){
-          $.attachInfiniteScroll($('.infinite-scroll'));
+      showAll:function(all){
+        var _this = this;
+        this.page.index = 0;
+        if(all){
+          this.display.showall = true;
+        }else{
+          this.display.showall = false;
         }
+        this.reInitScroll();
+        this.getData(function(){
+          if(_this.page.total <= _this.items.length){
+            _this.unbindInfinite();
+          }
+          $.refreshScroller();
+        });
+
+      },
+      reInitScroll:function(){
+        this.unbindInfinite();
+        this.bindInfiniteEvent();
+      },
+      unbindInfinite:function(){
+        $.detachInfiniteScroll($('#itemPage3Content'));
+        $('#itemPage3Content .infinite-scroll-preloader').hide();
       },
       bindInfiniteEvent:function(){
         var _this = this;
-        $(document).on('infinite','.infinite-scroll',function(e){
+        $.attachInfiniteScroll($('#itemPage3Content'));
+        $('#itemPage3Content .infinite-scroll-preloader').show();
+        var func = function(e){
           if(_this.loading) return;
           _this.page.index += _this.page.num;
           _this.getData(function(total){
             if(_this.page.total <= _this.items.length){
-              _this.scrollInit = false;
-              $.detachInfiniteScroll($('.infinite-scroll'));
-              $('.infinite-scroll-preloader').hide();
+              _this.unbindInfinite();
             }
             $.refreshScroller();
           });
-        });
+        };
+        $(document).off('infinite','#itemPage3Content',func).on('infinite','#itemPage3Content',func);
       },
       getData:function(callback,searchData){
         var _this = this;
         this.loading = true;
         searchData = searchData?searchData:this;
-        this.$http.post('/service/getItemReports.action',{
+        this.$http.post('/service/getDeptReportsInItem.action',{
           startDate:searchData.search.startTime+" 00:00:00",
           endDate:searchData.search.endTime+" 23:59:59",
-          region:searchData.key,
+          state:searchData.display.showall?-1:1,
+          itemId:_this.$route.params.id,
           index:searchData.page.index,
           num:searchData.page.num,
           token:Constant.token
@@ -189,14 +202,50 @@
         this.page.index = 0;
         this.items = [];
         this.reInitScroll();
+        var _this = this;
         this.getData(function(){
-          $.pullToRefreshDone('.pull-to-refresh-content');
+          if(_this.page.total <= _this.items.length){
+            _this.unbindInfinite();
+          }
+          $.pullToRefreshDone('#itemPage3Content');
         });
+      },
+      detail:function(id,name){
+        router.go({name:'itemshopdetails',params:{itemId:this.$route.params.id,deptId:id}});
       }
     }
   };
 </script>
 
-<style>
-
+<style scoped>
+.nav-content{
+  position: absolute;
+  top: 44px;
+  height:45px;
+  z-index: 3;
+  width: 100%;
+}
+  .content-is{
+    top:45px;
+    z-index: 2;
+  }
+  .tab-panel{
+    padding: 0px;
+  }
+.buttons-tab.head-tab a.tab-link{width:40%;top:0px;height:44px;line-height: 44px;color: #999;font-size: 14px;}
+.buttons-tab.head-tab .button.active{border-color:#f90; color: #333;font-size: 14px}
+  .item-list{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .item-list .item-name{
+    white-space: pre-wrap;
+  }
+  .item-list .item-state{
+    min-width: 60px;
+    font-size:14px;
+    text-align: right;
+  }
 </style>

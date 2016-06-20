@@ -2,29 +2,30 @@
   <div class="page-group">
     <div class="page page-current" id="index">
       <header class="bar bar-nav">
-        <h1 class='title' v-bind:class="'state-'+key">合格率{{title}}的点检项列表</h1>
+        <h1 class='title' v-show="key.indexOf(',')==-1">得分<span v-bind:class="'state-'+key">{{title}}</span>的门店列表</h1>
+        <h1 class='title' v-bind:class="'state-'+key" v-show="key.indexOf(',')>-1">{{title}}</h1>
       </header>
-      <div class="content pull-to-refresh-content infinite-scroll"  data-ptr-distance="55" data-distance="240">
+      <div class="top-panel">
+        <label class="date-time">{{search.startTime}}</label>
+        ～
+        <label class="date-time">{{search.endTime}}</label>
+      </div>
+      <div id="shopPage2Content" class="content content-items pull-to-refresh-content infinite-scroll"  data-ptr-distance="55" data-distance="240">
         <div class="pull-to-refresh-layer">
             <div class="preloader"></div>
             <div class="pull-to-refresh-arrow"></div>
         </div>
-        <div class="top-panel">
-          <label class="date-time">{{search.startTime}}</label>
-          ～
-          <label class="date-time">{{search.endTime}}</label>
-        </div>
         <div class="items-list">
           <ul>
-            <li v-for="item in items">
+            <li v-for="item in items" v-on:click="detail(item.deptId,item.deptName)">
               <div class="item-left">
-                <div class="item-name">{{item.itemName}}</div>
+                <div class="item-name">{{item.deptName}}</div>
                 <div class="item-des">
-                  <label class="item-label">检查店总数</label><span class="item-num">{{item.checkDeptNum}}</span><span class="item-splitor"></span>
-                  <label class="item-label">不合格店数</label><span class="item-num">{{item.unqualifiedDeptNum}}</span>
+                  <label class="item-label">检查项总数</label><span class="item-num">{{item.checkItemNum}}</span><span class="item-splitor"></span>
+                  <label class="item-label">不合格项数</label><span class="item-num">{{item.unqualifiedItemNum}}</span>
                 </div>
               </div>
-              <div class="item-rate" v-bind:class="{'state-best':item.qualifiedRate==1,'state-good':item.qualifiedRate<1&&item.qualifiedRate>=0.8,'state-bad':item.qualifiedRate<0.8}">{{item.qualifiedRate|percent}}</div>
+              <div class="item-rate" v-bind:class="{'state-best':item.score==100,'state-good':item.score<100&&item.score>=80,'state-bad':item.score<80}">{{item.score}}分</div>
             </li>
           </ul>
         </div>
@@ -45,13 +46,11 @@
         if(this.refreshInit){
           this.getData(function(){
             if(_this.page.total <= _this.items.length){
-              _this.scrollInit = false;
-              $.detachInfiniteScroll($('.infinite-scroll'));
-              $('.infinite-scroll-preloader').hide();
+              _this.unbindInfinite();
             }
             $.refreshScroller();
           },{
-            key:Constant.itemParam.itemsPage.key,
+            key:Constant.shopParam.shopsPage.key,
             page:{
               index:0,
               num:num
@@ -60,9 +59,9 @@
           });
         }
         transition.next({
-          title:Constant.itemParam.itemsPage.title,
-          state:Constant.itemParam.itemsPage.state,
-          key:Constant.itemParam.itemsPage.key,
+          title:Constant.shopParam.shopsPage.title,
+          state:Constant.shopParam.shopsPage.state,
+          key:Constant.shopParam.shopsPage.key,
           search:Constant.search,
           page:{
             index:0,
@@ -71,7 +70,8 @@
         });
       },
       deactivate:function(transition){
-        this.reInitScroll();
+        this.unbindInfinite();
+        this.clearData();
         transition.next();
       }
     },
@@ -95,71 +95,57 @@
     ready:function(){
       this.init();
     },
-    filters:{
-      whichraterange:function(rate){
-        if(rate == 1){
-          return "best";
-        }else if(rate < 0.8){
-          return "bad";
-        }else{
-          return 'good';
-        }
-      }
-    },
     methods:{
       init:function(opt){
         var _this = this;
         if(!this.refreshInit){
-          $('.content').scroller({
+          $('#shopPage2Content').scroller({
             type:'auto'
           });
-          $.initPullToRefresh('.pull-to-refresh-content');
-          $(document).on('refresh','.pull-to-refresh-content',function(e){
+          $.initPullToRefresh('#shopPage2Content');
+          $(document).on('refresh','#shopPage2Content',function(e){
             _this.refresh();
           });
           this.refreshInit = true;
         }
-        if(!this.scrollInit){
-          $.attachInfiniteScroll($('.infinite-scroll'));
-          $('.infinite-scroll-preloader').show();
-          this.scrollInit = true;
-          this.bindInfiniteEvent();
-        }
+        this.bindInfiniteEvent();
         var _this = this;
         this.getData(function(total){
           if(_this.page.total <= _this.items.length){
-            _this.scrollInit = false;
-            $.detachInfiniteScroll($('.infinite-scroll'));
-            $('.infinite-scroll-preloader').hide();
+            _this.unbindInfinite();
           }
           $.refreshScroller();
         },opt);
       },
       reInitScroll:function(){
-        if(!this.scrollInit){
-          $.attachInfiniteScroll($('.infinite-scroll'));
-        }
+        this.unbindInfinite();
+        this.bindInfiniteEvent();
+      },
+      unbindInfinite:function(){
+        $.detachInfiniteScroll($('#shopPage2Content'));
+        $('#shopPage2Content .infinite-scroll-preloader').hide();
       },
       bindInfiniteEvent:function(){
         var _this = this;
-        $(document).on('infinite','.infinite-scroll',function(e){
+        $.attachInfiniteScroll($('#shopPage2Content'));
+        $('#shopPage2Content .infinite-scroll-preloader').show();
+        var func = function(e){
           if(_this.loading) return;
           _this.page.index += _this.page.num;
           _this.getData(function(total){
             if(_this.page.total <= _this.items.length){
-              _this.scrollInit = false;
-              $.detachInfiniteScroll($('.infinite-scroll'));
-              $('.infinite-scroll-preloader').hide();
+              _this.unbindInfinite();
             }
             $.refreshScroller();
           });
-        });
+        };
+        $(document).off('infinite','#shopPage2Content',func).on('infinite','#shopPage2Content',func);
       },
       getData:function(callback,searchData){
         var _this = this;
         this.loading = true;
         searchData = searchData?searchData:this;
-        this.$http.post('/service/getItemReports.action',{
+        this.$http.post('/service/getDeptReports.action',{
           startDate:searchData.search.startTime+" 00:00:00",
           endDate:searchData.search.endTime+" 23:59:59",
           region:searchData.key,
@@ -179,61 +165,39 @@
           }
         });
       },
+      clearData:function(){
+        this.page.index = 0;
+        this.items = [];
+      },
       refresh:function(){
         this.page.index = 0;
         this.items = [];
         this.reInitScroll();
+        var _this = this;
         this.getData(function(){
-          $.pullToRefreshDone('.pull-to-refresh-content');
+          if(_this.page.total <= _this.items.length){
+            _this.unbindInfinite();
+          }
+          $.pullToRefreshDone('#shopPage2Content');
         });
+      },
+      detail:function(id,name){
+        Constant.shopParam.shopitemsPage.title = name;
+        router.go({name:'shopitems',params:{id:id}});
       }
     }
   };
 </script>
 
-<style>
+<style scoped>
   .top-panel{
-    background: #eee;
-    padding:5px 10px;
-    font-size: 14px;
+    z-index: 3;
+    width: 100%;
+    position: absolute;
+    top: 44px;
   }
-  .items-list{
-
-  }
-  .items-list ul{margin:0;padding:0px;}
-  .items-list li{border-bottom: 1px solid #ddd;padding:10px 10px;display: flex;align-items: center;}
-  .item-name{
-    word-wrap: break-word;
-    white-space: pre;
-    font-size:16px;
-  }
-  .item-des{
-    height: 20px;
-    line-height: 20px;
-  }
-  .item-left{width:80%;}
-  .item-des span,.item-des label,.item-des{
-    vertical-align: middle;
-  }
-  .item-label{
-    color: #999;
-    font-size: 12px;
-    margin-right: 2px;
-  }
-  .item-num{
-    color:red;
-    font-size: 12px;
-  }
-  .item-splitor{
-    display: inline-block;
-    width:1px;
-    background: #ddd;
-    height:12px;
-    margin:0 10px;
-  }
-  .item-rate{
-    font-size: 20px;
-    margin-right:20px;
-    float:right;
+  .content-items{
+    top:31px;
+    z-index: 2;
   }
 </style>

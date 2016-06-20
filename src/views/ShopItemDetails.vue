@@ -380,7 +380,8 @@
     font-size: 14px;
   }
   .item-username{
-    width: 50px;
+    max-width: 80px;
+    min-width: 50px;
     overflow: hidden;
     text-overflow:ellipsis;
     -o-text-overflow:ellipsis;
