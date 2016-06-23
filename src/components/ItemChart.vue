@@ -2,8 +2,14 @@
   <div>
     <div class="board-box">
       <div class="board-cell">
-        <span class="cell-tip" id="help1">点检项总数<span class="moon-ico icon-info"></span></span>
-        <span class="cell-value" v-on:click="allDetails()">{{report.totalNum}}</span>
+        <span class="cell-tip" id="help0">点检项总数<span class="moon-ico icon-info"></span></span>
+        <span class="cell-value" v-on:click="allDetails()">{{report.total}}</span>
+        <div class="toast-tip help0">企业所有点检项总数</div>
+      </div>
+      <div class="boardbox-splitor"></div>
+      <div class="board-cell">
+        <span class="cell-tip" id="help1">覆盖项总数<span class="moon-ico icon-info"></span></span>
+        <span class="cell-value" v-on:click="allCheckDetails()">{{report.totalNum}}</span>
         <div class="toast-tip help1">当前时间范围内被点检的点检项总数</div>
       </div>
       <div class="boardbox-splitor"></div>
@@ -46,6 +52,7 @@ var ANIMATE_TIME  = 6;//动画耗时时间
       selectType:0,
       report:{
         totalNum:0,
+        total:0,
         okNum:0,
         data:[],
         lastFiveData:[],
@@ -101,6 +108,12 @@ var ANIMATE_TIME  = 6;//动画耗时时间
       document.getElementById('help1').addEventListener('touchend', function(){
         $('.help1').hide();
       });
+      document.getElementById('help0').addEventListener('touchstart', function(){
+        $('.help0').show();
+      });
+      document.getElementById('help0').addEventListener('touchend', function(){
+        $('.help0').hide();
+      });
       document.getElementById('help2').addEventListener('touchstart', function(){
         $('.help2').show();
       });
@@ -117,11 +130,11 @@ var ANIMATE_TIME  = 6;//动画耗时时间
         if(_this.selectType == param.dataIndex){//如果当前高亮显示的是自己就return
           return;
         }
-        myChart.dispatchAction({
+        /*myChart.dispatchAction({
           type:'downplay',
           seriesIndex:0,
           dataIndex:_this.selectType
-        });
+        });*/
         _this.selectValueType(param.dataIndex);
       });
       this.chart.chartObject = myChart;
@@ -138,6 +151,7 @@ var ANIMATE_TIME  = 6;//动画耗时时间
      */
     formatData:function(data){
       this.report.totalNum = data.checkedItemNum;
+      this.report.total = data.itemsNum;
       this.report.data = [];
       this.report.okNum = data.qualifiedItemNum;
       this.animateNum(data);
@@ -171,6 +185,19 @@ var ANIMATE_TIME  = 6;//动画耗时时间
           _this.report.totalNum = data.checkedItemNum;
         }else{
           _this.report.totalNum += step;
+        }
+      },100);
+      this.report.total = 0;
+      var step = Math.ceil(data.itemsNum/ANIMATE_TIME);
+      var timer0 = setInterval(function(){
+        if(_this.report.total >= data.itemsNum){
+          clearInterval(timer0);
+          timer0 = null;
+        }
+        if(_this.report.total+step >= data.itemsNum){
+          _this.report.total = data.itemsNum;
+        }else{
+          _this.report.total += step;
         }
       },100);
       this.report.okNum = 0;
@@ -213,13 +240,13 @@ var ANIMATE_TIME  = 6;//动画耗时时间
         var option = chartutils.getPieChartOption().option;
         option.series[0].data = this.report.data;
         myChart.setOption(option);
-        setTimeout(function(){
+        /*setTimeout(function(){
           myChart.dispatchAction({
             type:'highlight',
             seriesIndex:0,
             dataIndex:0
           });
-        },1000);
+        },1000);*/
       }else{
         this.renderNodataChart();
       }
@@ -266,9 +293,18 @@ var ANIMATE_TIME  = 6;//动画耗时时间
      * 查看所有的详情
      */
     allDetails:function(){
-      if(this.report.totalNum>0){
+      if(this.report.total>0){
         this.setConstantValue({
           name:'点检项列表',
+          key:'best,good,bad,undo'
+        });
+        router.go({path:'/items'});
+      }
+    },
+    allCheckDetails:function(){
+      if(this.report.totalNum>0){
+        this.setConstantValue({
+          name:'覆盖点检项列表',
           key:'best,good,bad'
         });
         router.go({path:'/items'});

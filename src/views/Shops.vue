@@ -17,7 +17,7 @@
         </div>
         <div class="items-list">
           <ul>
-            <li v-for="item in items" v-on:click="detail(item.deptId,item.deptName)">
+            <li v-for="item in items" v-on:click="detail(item.deptId,item.deptName,item.score)">
               <div class="item-left">
                 <div class="item-name">{{item.deptName}}</div>
                 <div class="item-des">
@@ -25,7 +25,8 @@
                   <label class="item-label">不合格项数</label><span class="item-num">{{item.unqualifiedItemNum}}</span>
                 </div>
               </div>
-              <div class="item-rate" v-bind:class="{'state-best':item.score==100,'state-good':item.score<100&&item.score>=80,'state-bad':item.score<80}">{{item.score}}分</div>
+              <div class="item-rate" v-show="item.score!=-1" v-bind:class="{'state-best':item.score==100,'state-good':item.score<100&&item.score>=80,'state-bad':item.score<80}">{{item.score}}分</div>
+              <div class="item-rate" v-show="item.score==-1">未检查</div>
             </li>
           </ul>
         </div>
@@ -181,7 +182,8 @@
           $.pullToRefreshDone('#shopPage2Content');
         });
       },
-      detail:function(id,name){
+      detail:function(id,name,score){
+        if(score == -1) return;
         Constant.shopParam.shopitemsPage.title = name;
         router.go({name:'shopitems',params:{id:id}});
       }

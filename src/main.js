@@ -42,8 +42,6 @@ window.router = router;
 window.goBack = function(){
   var curPathName = Constant.curRoute.pathName;
   var backInfo = utils.getBackPath(curPathName);
-  console.log(curPathName+","+backInfo.parent);
-  console.log(backInfo.params);
   if(backInfo.parent){
     router.go({name:backInfo.parent,params:backInfo.params});
     window.webview &&　window.webview.goBack(false);

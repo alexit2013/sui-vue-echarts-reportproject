@@ -23,7 +23,12 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
+.icon-shop:before {
+  content: "\e9f8";
+}
+.icon-calendar:before {
+  content: "\e9f9";
+}
 .icon-detail_up:before {
   content: "\e9f6";
 }

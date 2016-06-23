@@ -100,8 +100,10 @@ module.exports =  {
         this.currentView = 'shopchart';
       else if(index == 1)
         this.currentView = 'itemchart';
-      else if(index == 2)
+      else if(index == 2){
+        $.toast('即将开放');
         this.currentView = 'capacitychart';
+      }
     }
   }
 };

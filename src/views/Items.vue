@@ -17,7 +17,7 @@
         </div>
         <div class="items-list">
           <ul>
-            <li v-for="item in items" v-on:click="detail(item.itemId,item.itemName)">
+            <li v-for="item in items" v-on:click="detail(item.itemId,item.itemName,item.qualifiedRate)">
               <div class="item-left">
                 <div class="item-name">{{item.itemName}}</div>
                 <div class="item-des">
@@ -25,7 +25,8 @@
                   <label class="item-label">不合格店数</label><span class="item-num">{{item.unqualifiedDeptNum}}</span>
                 </div>
               </div>
-              <div class="item-rate" v-bind:class="{'state-best':item.qualifiedRate==1,'state-good':item.qualifiedRate<1&&item.qualifiedRate>=0.8,'state-bad':item.qualifiedRate<0.8}">{{item.qualifiedRate|percent}}</div>
+              <div class="item-rate" v-show="item.qualifiedRate!=-1" v-bind:class="{'state-best':item.qualifiedRate==1,'state-good':item.qualifiedRate<1&&item.qualifiedRate>=0.8,'state-bad':item.qualifiedRate<0.8}">{{item.qualifiedRate|percent}}</div>
+              <div class="item-rate" v-show="item.qualifiedRate==-1">未检查</div>
             </li>
           </ul>
         </div>
@@ -192,7 +193,8 @@
           $.pullToRefreshDone('#itemPage2Content');
         });
       },
-      detail:function(id,name){
+      detail:function(id,name,rate){
+        if(rate == -1) return;
         Constant.itemParam.itemshopsPage.title = name;
         router.go({name:'itemshops',params:{id:id}});
       }

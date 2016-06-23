@@ -7,25 +7,19 @@ module.exports.getPieChartOption = function(){
       animation:false,
       series : [ {
         type : 'pie',
-        radius : [ '50%', '70%' ],
+        radius : [ '35%', '55%' ],
         color:['#8acc47','#04bafe','#ff4d27', '#61a0a8', '#d48265', '#91c7ae','#749f83',  '#ca8622', '#bda29a','#6e7074', '#546570', '#c4ccd3'],
         avoidLabelOverlap : false,
         label : {
           normal : {
-            show : false,
-            position : 'center'
-          },
-          emphasis : {
             show : true,
-            textStyle : {
-              fontSize : '30',
-              fontWeight : 'bold'
-            }
+            position : 'outside'
+            //formatter:'{b}\n{d}%'
           }
         },
         labelLine : {
           normal : {
-            show : false
+            show : true
           }
         },
         data : []

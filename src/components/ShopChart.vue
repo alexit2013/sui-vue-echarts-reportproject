@@ -2,13 +2,19 @@
   <div>
     <div class="board-box">
       <div class="board-cell">
-        <span class="cell-tip" id="help1">门店总数<span class="moon-ico icon-info"></span></span>
-        <span class="cell-value" v-on:click="allDetails()">{{report.totalNum}}</span>
+        <span class="cell-tip" id="help0">门店总数<span class="moon-ico icon-info"></span></span>
+        <span class="cell-value" v-on:click="allDetails()">{{report.total}}</span>
+        <div class="toast-tip help0">管辖范围内的门店总数</div>
+      </div>
+      <div class="boardbox-splitor"></div>
+      <div class="board-cell">
+        <span class="cell-tip" id="help1">覆盖店数<span class="moon-ico icon-info"></span></span>
+        <span class="cell-value" v-on:click="allCheckDetails()">{{report.totalNum}}</span>
         <div class="toast-tip help1">当前时间范围内被点检的门店总数</div>
       </div>
       <div class="boardbox-splitor"></div>
       <div class="board-cell">
-        <span class="cell-tip"id="help2">合格门店数<span class="moon-ico icon-info"></span></span>
+        <span class="cell-tip"id="help2">合格店数<span class="moon-ico icon-info"></span></span>
         <span class="cell-value" v-on:click="okDetails()">{{report.okNum}}</span>
         <div class="toast-tip help2">当前时间范围内被点检门店中综合分数大于80分的门店总数</div>
       </div>
@@ -49,6 +55,7 @@
         selectType:0,
         report:{
           totalNum:0,
+          total:0,
           okNum:0,
           data:[],
           lastFiveData:[],
@@ -97,6 +104,12 @@
     },
     methods:{
       init:function(){
+        document.getElementById('help0').addEventListener('touchstart', function(){
+          $('.help0').show();
+        });
+        document.getElementById('help0').addEventListener('touchend', function(){
+          $('.help0').hide();
+        });
         document.getElementById('help1').addEventListener('touchstart', function(){
           $('.help1').show();
         });
@@ -119,11 +132,11 @@
           if(_this.selectType == param.dataIndex){//如果当前高亮显示的是自己就return
             return;
           }
-          myChart.dispatchAction({
+          /*myChart.dispatchAction({
             type:'downplay',
             seriesIndex:0,
             dataIndex:_this.selectType
-          });
+          });*/
           _this.selectValueType(param.dataIndex);
         });
         this.chart.chartObject = myChart;
@@ -148,6 +161,7 @@
       formatData:function(data){
         this.report.data = [];
         this.report.totalNum = data.checkedDeptNum;
+        this.report.total = data.deptsNum;
         this.report.okNum = data.qualifiedDeptNum;
         this.animateNum(data);
         var best = data.regions.best,good = data.regions.good,bad = data.regions.bad;
@@ -192,6 +206,19 @@
             _this.report.totalNum += step;
           }
         },100);
+        this.report.total = 0;
+        var step = Math.ceil(data.deptsNum/ANIMATE_TIME);
+        var timer0 = setInterval(function(){
+          if(_this.report.total >= data.deptsNum){
+            clearInterval(timer0);
+            timer0 = null;
+          }
+          if(_this.report.total+step >= data.deptsNum){
+            _this.report.total = data.deptsNum;
+          }else{
+            _this.report.total += step;
+          }
+        },100);
         this.report.okNum = 0;
         var step1 = Math.ceil(data.qualifiedDeptNum/ANIMATE_TIME);
         var timer2 = setInterval(function(){
@@ -232,13 +259,13 @@
           var option = chartutils.getPieChartOption().option;
           option.series[0].data = this.report.data;
           myChart.setOption(option);
-          setTimeout(function(){
+          /*setTimeout(function(){
             myChart.dispatchAction({
               type:'highlight',
               seriesIndex:0,
               dataIndex:0
             });
-          },1000);
+          },1000);*/
         }else{
           this.renderNodataChart();
         }
@@ -296,9 +323,18 @@
        * 查看所有的详情
        */
       allDetails:function(){
-        if(this.report.totalNum>0){
+        if(this.report.total>0){
           this.setConstantValue({
             name:'门店列表',
+            key:'best,good,bad,undo'
+          });
+          router.go({path:'/shops'});
+        }
+      },
+      allCheckDetails:function(){
+        if(this.report.totalNum>0){
+          this.setConstantValue({
+            name:'覆盖门店列表',
             key:'best,good,bad'
           });
           router.go({path:'/shops'});
@@ -344,7 +380,7 @@
     overflow: hidden;
   }
   .data-list li.active{background: #eee;}
-  .chart-container{height:360px;}
+  .chart-container{height:320px;}
   .cell-0{
     width:3%;
     margin-left:0px;
@@ -424,6 +460,10 @@
     border-radius: 10px;
   }
   .help1{
+    top:-50px;
+    right:20px;
+  }
+  .help0{
     top:-50px;
     right:20px;
   }
